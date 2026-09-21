@@ -63,5 +63,3 @@ flowchart LR
 - 工程验证（engineering validation）
 
 当前内容不包含真实雷达实测验证，也不包含实机飞行验证。各项目结论应在对应的模型假设、仿真条件和验证范围内理解。
-
-## Contact

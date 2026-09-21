@@ -1,6 +1,6 @@
 # QuadControl-Lab
 
-模块化四旋翼动力学、控制与最小姿态估计接口验证平台。
+构建模块化四旋翼动力学与控制仿真平台，集成刚体动力学、执行器建模、IMU 与最小姿态估计接口，并通过确定性仿真验证控制与观测链路。
 
 ---
 
@@ -10,7 +10,7 @@
 | ----- | ------- |
 | Project Type | Engineering Simulation Platform |
 | Status | Completed showcase / validation platform |
-| Role | 仿真架构、动力学与控制链路、最小姿态估计接口及验证流程开发 |
+| Role | Modular dynamics simulation, flight-control architecture, observation interface design, deterministic validation and provenance |
 | Keywords | Quadrotor Dynamics, Flight Control, IMU, Attitude Estimation, RK4, Validation |
 
 本项目用于建立一套模块边界清晰、可替换且可审计的四旋翼仿真平台，以便分别检查动力学、执行器、控制器、传感器和观测接口。工程上重点解决不同模块之间的状态与坐标约定、控制分配、执行器状态更新、观测来源和验证证据难以追踪的问题。

@@ -10,7 +10,7 @@
 | ----- | ------- |
 | Project Type | Computational Electromagnetics Engineering Toolchain |
 | Status | Completed showcase / audited engineering workflow |
-| Role | 参数化 CAD、CST 仿真、复场提取、Python 信号链与工程审计流程开发 |
+| Role | CAD and EM simulation workflow, complex-field extraction, signal processing, engineering audit and provenance |
 | Keywords | Parameterized CAD, CST, Full-Wave Simulation, Complex Field Extraction, Signal Processing, Reproducibility |
 
 旋翼目标的运动相关特征不能由单一 RCS 数值或一张结果截图完整表达。为了让电磁仿真结果能够进入下游信号生成与特征分析，工具链需要持续保留几何状态、入射与观测方向、复幅度与相位、极化约定、求解器 metadata 和处理参数。
