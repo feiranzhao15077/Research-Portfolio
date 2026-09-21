@@ -4,6 +4,7 @@
 
 - [EM-Trace — 电磁仿真与目标特征分析工具链开发](projects/em-trace/)
 - [EMvision — 复杂电磁环境下旋翼目标微多普勒建模与识别研究](projects/emvision/)
+- [LowAlt-MD — 低空旋翼目标微多普勒特性建模与机理分析](projects/lowalt-md/)
 - [QuadControl — 四旋翼无人机动力学建模与飞控闭环仿真平台](projects/QuadControl-Lab/)
 
 EM-Trace presents a reproducible engineering workflow for parameterized rotor geometry, CST full-wave simulation, complex-field extraction, and signal-chain analysis. It is documented as an engineering showcase with explicit evidence boundaries, not as a completed real-radar validation study.
