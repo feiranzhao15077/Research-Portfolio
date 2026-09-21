@@ -1,108 +1,121 @@
 # LowAlt-MD
 
-低空旋翼目标微多普勒物理建模与多径机制分析
+在合成平坦地面多径模型下，研究旋翼散射单元的路径相位与相干叠加如何改变微多普勒结构，并通过受控实验分析跨环境识别边界。
 
-> **一句话定位：** 在平坦有耗地面和低阶镜面多径近似下，研究旋翼运动散射单元的路径相位如何改变微多普勒结构，并验证这种变化对跨环境识别可靠性的影响。
+---
 
-## Physical Problem
+## Project Overview
 
-低空旋翼目标的回波同时受到旋翼周期运动、目标—地面传播路径和相干叠加的影响。项目关注的核心问题不是单纯提高分类器指标，而是建立一条可检查的物理链：
+| Field | Content |
+| ----- | ------- |
+| Project Type | Low-altitude Rotor Micro-Doppler Mechanism Study |
+| Status | Completed showcase / Synthetic Physics Model v2 validation complete |
+| Role | Rotor-motion and multipath modeling, complex echo generation, validation protocol design, and mechanism analysis |
+| Keywords | Computational Electromagnetics, Rotor Kinematics, Ground Multipath, Coherent Interference, Micro-Doppler, Fresnel Reflection, Synthetic Experiments, Mechanism Analysis |
 
-```text
-散射单元运动
-    ↓
-直达/反射路径差
-    ↓
-单元相关传播相位
-    ↓
-相干叠加
-    ↓
-微多普勒结构与跨环境特征域变化
-```
+本项目以低空旋翼目标为研究对象，在 synthetic low-altitude propagation model 中分析旋翼周期运动、地面反射路径与相干叠加对微多普勒结构的影响。核心问题不是单纯提高分类器指标，而是区分公共传播增益、散射单元相关复权重、路径相位异质性和四路径干涉分别支持哪些机制解释。
 
-## Modeling Pipeline
+当前验证范围包括 Physics Model v2 的运动学与镜像传播几何、M0–M3 分层传播模型、复回波与频谱/STFT 特征生成、数值闭合检查，以及受控的同环境与跨环境识别协议。全部结果来自合成数据，不构成真实低空环境或实测雷达验证。
+
+## Problem and Motivation
+
+旋翼周期运动使不同散射单元产生随时间变化的径向速度和传播路径，从而形成微多普勒。当地面反射被引入后，其作用不能在所有条件下简单等价为统一幅度衰减：不同散射单元可能具有不同的路径差、传播相位和复权重，相干叠加后可能改变归一化频谱及时频结构。
+
+为了避免把数值变化直接解释为物理规律，本项目采用 M0–M3 分层模型逐步增加机制复杂度：先建立自由空间基线，再检查公共复增益、散射单元相关复权重和显式四路径干涉。该设计用于定位结构变化来自哪一层假设，并为后续识别实验提供可审计的证据边界，而不是揭示真实低空环境中的一般电磁规律。
+
+## Architecture / Method
 
 ```mermaid
-flowchart LR
-    accTitle: LowAlt-MD modeling pipeline
-    accDescr: A low-altitude rotor target is modeled as moving scattering cells, propagated through a flat-ground multipath model, converted to micro-Doppler features, and evaluated with controlled recognition protocols.
+flowchart TB
+    accTitle: LowAlt-MD Mechanism Study Pipeline
+    accDescr: Rotor kinematics drive isotropic point scatterers through layered propagation models before complex echo generation, spectral analysis, and controlled validation.
 
-    rotor_kinematics["Rotor kinematics"] --> scatterer_model["Scatterer model"]
-    scatterer_model --> multipath_propagation["Multipath propagation"]
-    multipath_propagation --> complex_echo["Complex echo"]
-    complex_echo --> micro_doppler["Micro-Doppler features"]
-    micro_doppler --> controlled_validation["Controlled validation"]
+    rotor_kinematics["Rotor Kinematics"] --> point_scatterers["Isotropic Point Scatterers"]
+    point_scatterers --> propagation_models["M0 / M1 / M2 / M3 Propagation Models"]
+    propagation_models --> complex_echo["Complex Echo Generation"]
+    complex_echo --> spectrum_stft["Spectrum / STFT Features"]
+    spectrum_stft --> controlled_validation["Controlled Validation"]
 ```
 
-## What I Built
+- **Rotor Kinematics**：Physics Model v2 使用 `p(t)=Ry(β)Rz(ωt)p0` 表达固定倾角旋翼，并检查旋翼法向与刚体距离约束。
+- **Fresnel Reflection and Image Geometry**：使用镜像雷达几何重新定义地面入射角，使反射系数、路径长度和传播相位采用一致的几何语义。
+- **Layered Propagation Models**：M0 为自由空间基线；M1 引入公共复增益；M2/M2.5 引入散射单元相关复权重与 path phase diversity；M3 显式组织 `DD/DR/RD/RR` paths。
+- **Coherent Aggregation**：先按路径聚合各散射单元复场，再计算 full-target coherent/incoherent power，避免混用逐单元量和整目标量。
+- **Numerical Validation**：使用 power ledger、pairwise interference closure、路径长度与相位检查验证数值账本；验证通过表示实现与协议闭合，不表示真实环境模型已得到验证。
 
-- **Physics Model v2**：修正 Fresnel 镜像几何，并将固定倾斜旋翼冻结为 `p(t)=Ry(β)Rz(ωt)p0`
-- **分层传播模型**：实现 M0 自由空间、M1 共同复增益、M2 逐散射单元有效两项代理和 M3 `DD/DR/RD/RR` 四路径原型
-- **散射与信号生成**：使用 2/3/4 叶旋翼和各向同性点散射单元，生成复回波、频谱及时频特征
-- **数值验证链**：完成 Fresnel、运动学、路径长度、相位、full-target 功率账本和 pairwise 干涉闭合验证
-- **受控识别协议**：完成 Track A/Track B、paired latent、label-permutation 和 matched-budget 未见高度实验
+## My Contribution
 
-## Validation & Debugging
+- **Physics Model v2 实现**：修正旋翼运动学、Fresnel 入射角和镜像传播几何。
+- **M0–M3 分层传播模型构建**：实现自由空间、公共复增益、散射单元相关有效两项模型和 `DD/DR/RD/RR` 四路径原型。
+- **复回波与特征流程**：使用 2/3/4 叶旋翼和 isotropic point scatterer proxy，生成复回波、频谱和 STFT 特征。
+- **数值验证链**：完成 path phase、full-target power ledger 和 pairwise interference closure 检查。
+- **受控实验协议**：设计 paired latent、label permutation、matched latent diversity 和 matched waveform budget 实验。
+- **证据边界整理**：记录被修正的模型问题、negative result、适用范围及被 Physics Model v2 取代的旧结论。
 
-项目中一个重要的科研过程是：**发现旧模型问题 → 修正物理定义 → 重新验证 → 更新结论**。
+## Representative Results
 
-| 检查项 | 旧问题 | Physics Model v2 修正 |
-| --- | --- | --- |
-| Fresnel 入射角 | 反射路径角度未正确使用镜像雷达高度 | 从地面法向重新定义镜像几何入射角 |
-| 倾斜旋翼运动学 | 旋转与倾斜矩阵次序不符合固定刚体旋转 | 采用 `Ry(β)Rz(ωt)p0` |
-| 四路径功率 | 逐散射单元量与 full-target 量容易混用 | 先按路径聚合，再统一计算 coherent/incoherent power |
-| 识别数据 | R2.1 曾存在重新渲染和组合不完整风险 | 直接复用冻结 R2 带噪特征，完成四组合置乱闭环 |
-| 泛化预算 | 旧 R3 未同时控制 latent diversity 与 waveform 数量 | v2 同时匹配 unique latent-state budget 和 waveform budget |
+### 1. Common Gain vs. Element-dependent Weighting
 
-当前验证状态：
+在 M1 中，在无噪声条件下，非零、时不变且散射单元共享的公共复增益不会改变归一化结构，对应 normalized-spectrum L2 为 `4.2423×10^-17`。在 M2 中，散射单元相关的非公共复权重可以改变归一化微多普勒结构，对应 L2 为 `0.025246`。
 
-- `F6 / M0 / M1 = PASS`
-- `M2 / M2.5 = PASS`
-- `M3-alpha / beta = PASS`
-- `R2 / R2.1 / R3 = PASS`（R3 的 PASS 表示协议和实验完成，不表示多环境优势成立）
+**Boundary：**该结果仅支持当前模型下公共复增益与散射单元相关复权重的机制区分，不证明真实地面反射一定产生相同幅度的结构变化。
 
-## Key Findings
+### 2. Path Phase and Coherent Interference
 
-1. 对非零、时不变、cell-common、无噪声复增益，归一化微多普勒结构保持不变。
-2. 逐散射单元的非共同复权重可以改变归一化微多普勒结构。
-3. 当前参数下，几何路径相位异质性明显强于 Fresnel 单元间变化。
-4. M3 full-target 功率账本在 200 m 与 400 m 呈现不同的相消/相长倾向。
-5. Track A 含有明显的合成类别能量 shortcut；Track B 能量控制后仍保留结构可分性。
+在当前主配置中，M2.5 的 path-phase spatial standard deviation 为 `0.776588 rad`，同一工况下 Fresnel-phase spatial standard deviation 为 `3.23×10^-7 rad`。M3 的 coherent/incoherent ratio 在 200 m 和 400 m 分别为 `0.4311` 与 `2.4181`，pairwise interference 呈现不同的相消与相长倾向；对应 power-ledger closure residual 分别为 `1.3235×10^-22` 和 `5.9557×10^-23`。
 
-## Negative Result
+**Boundary：**这些结果依赖当前合成参数、平坦有耗地面和低阶镜面多径假设，只说明当前配置中的 path phase diversity 与相干干涉行为。
 
-在同时匹配 unique latent-state budget 与 waveform budget 的条件下，20 m+40 m 简单多环境联合训练在未见 80 m 环境上未稳定优于最佳单环境基线，部分模型/距离条件下存在性能代价。
+### 3. Matched-budget Negative Result
 
-这一结果只说明：在当前物理模型、结构特征、简单分类器和 20/40→80 m 协议下，增加两个已见高度并没有自动形成稳定的未见高度表示；它不等价于“多环境训练普遍无效”。
+在同时匹配 unique latent-state budget 与 waveform budget 后，20 m + 40 m 多环境训练没有在未见的 80 m 条件下稳定超过最佳单环境基线。multi − best-single 的配对差值在 200 m 为 `−0.0322`（Logistic Regression）和 `−0.0434`（MLP），在 400 m 为 `−0.0158` 和 `−0.0222`。
+
+**Boundary：**该 negative result 仅适用于当前 Physics Model v2、结构特征、简单分类器和固定 `20/40→80 m` 协议，不代表所有模型、特征或真实数据中的多环境训练均无效。
+
+## Figures / Evidence
+
+### 1. M3 coherent and incoherent power
+
+![M3 coherent and incoherent power comparison at 200 m and 400 m](assets/coherent_incoherent_200m_400m.png)
+
+*M3 在 200 m 与 400 m 条件下的 full-target coherent/incoherent power 和 pairwise interference。*
+
+- **支持的结论**：当前合成配置在两个距离条件下呈现不同的相消与相长倾向，且干涉项可通过 power ledger 审计。
+- **不支持的结论**：不证明真实地面环境在相同距离下具有相同干涉规律，也不构成实测雷达验证。
+
+### 2. M1 and M2 normalized spectrum
+
+![M1 common gain and M2 element-dependent weighting comparison](assets/m1_m2_normalized_spectrum_200m.png)
+
+*M1 公共复增益与 M2 散射单元相关复权重的归一化频谱对照。*
+
+- **支持的结论**：当前模型中，公共复增益保持归一化结构，而散射单元相关复权重可以改变该结构。
+- **不支持的结论**：不提供真实叶片 RCS、真实地面传播或定量实测微多普勒的一致性证明。
+
+### 3. Controlled recognition experiment
+
+![R2 Track B controlled recognition Macro-F1](assets/r2_track_b_macro_f1.png)
+
+*Track B 在同环境与跨环境条件下的受控结构特征识别结果。*
+
+- **支持的结论**：经过 scatterer-strength control 和 waveform RMS normalization 后，选定设置中仍存在高于机会水平的结构信息，同时结果对环境条件敏感。
+- **不支持的结论**：不证明所有 shortcut 或 leakage 风险已消除，也不代表真实雷达数据上的识别性能或泛化能力。
+
+R3 未见高度结果及完整数值表保留在 [`evidence/validation_summary.md`](evidence/validation_summary.md) 和原始仓库的冻结结果中，本展示页未重新运行实验。
 
 ## Limitations
 
-- 合成仿真、平坦有耗镜面地面、10 GHz 和远场主工况
-- 各向同性点散射代理，不含标定叶片 RCS、路径相关双站散射、天线方向图或实测雷达验证
-- 四路径是低阶可解释传播近似；Track B 是能量控制协议，不代表已经消除所有 shortcut
+- 仅使用 synthetic data，全部结论限定在数值仿真范围内。
+- 假设 flat lossy ground，不包含真实地形标定；Ground A/B 仅为 `illustrative_control`，不是实测地面类别。
+- 使用 low-order specular multipath approximation，不包含 rough surface scattering 或 diffuse scattering。
+- 旋翼叶片采用 isotropic point scatterer proxy，不包含 calibrated blade RCS 或路径相关双站散射模型。
+- 无 measured radar data、实测天线方向图或真实雷达闭环验证。
+- 无 full-wave target-background simulation；M3 四路径模型是低阶、可解释的传播近似。
+- 当前结果不外推为真实低空环境中的一般传播、识别或泛化规律。
 
-## Selected Visual Evidence
+## Repository / Evidence
 
-![M1 and M2 normalized spectrum comparison](assets/m1_m2_normalized_spectrum_200m.png)
-
-*M1 共同复增益与 M2 逐单元有效两项代理的归一化谱对照。*
-
-![Path difference over rotor motion](assets/path_difference_200m.png)
-
-*运动散射单元路径差随时间变化。*
-
-![Coherent and incoherent power comparison](assets/coherent_incoherent_200m_400m.png)
-
-*200 m 与 400 m 的 full-target coherent/incoherent power 对照。*
-
-![R2 Track B Macro-F1](assets/r2_track_b_macro_f1.png)
-
-*受控结构特征的同环境与跨环境识别结果。*
-
-R3 的未见高度结果保留在 [`evidence/validation_summary.md`](evidence/validation_summary.md) 及原始仓库的冻结 CSV 中，未为展示重新运行实验。
-
-## Original Repository
-
-完整源码、实验脚本、Physics v2 验证报告和 v2 结果位于：[LowAlt-MD 原始仓库](https://github.com/feiranzhao15077/LowAlt-MD)。
-
-当前科学口径以 [Physics v2 scientific status freeze](https://github.com/feiranzhao15077/LowAlt-MD/blob/master/docs/final/LowAlt-MD_physics_v2_scientific_status_freeze_v1.md) 为准；本展示目录只保留摘要和精选证据，不包含完整数据集、临时日志或本地路径。
+- **Original Repository**：[LowAlt-MD source repository](https://github.com/feiranzhao15077/LowAlt-MD)
+- **Validation Summary**：[Portfolio validation summary](evidence/validation_summary.md)
+- **Scientific Status Freeze**：[Physics Model v2 scientific status freeze](https://github.com/feiranzhao15077/LowAlt-MD/blob/master/docs/final/LowAlt-MD_physics_v2_scientific_status_freeze_v1.md)
+- **Frozen Result Tables**：[Quantitative evidence and frozen result locations](evidence/validation_summary.md#quantitative-evidence)
