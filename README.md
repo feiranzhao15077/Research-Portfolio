@@ -1,14 +1,67 @@
 # Research Portfolio
 
-## Projects
+围绕计算电磁、旋翼微多普勒分析与无人系统仿真开展的本科科研与工程实践。
 
-- [EM-Trace — 电磁仿真与目标特征分析工具链开发](projects/em-trace/)
-- [EMvision — 复杂电磁环境下旋翼目标微多普勒建模与识别研究](projects/emvision/)
-- [LowAlt-MD — 低空旋翼目标微多普勒特性建模与机理分析](projects/lowalt-md/)
-- [QuadControl — 四旋翼无人机动力学建模与飞控闭环仿真平台](projects/QuadControl-Lab/)
+---
 
-EM-Trace presents a reproducible engineering workflow for parameterized rotor geometry, CST full-wave simulation, complex-field extraction, and signal-chain analysis. It is documented as an engineering showcase with explicit evidence boundaries, not as a completed real-radar validation study.
+## About Me
 
-EMvision presents a synthetic, controlled study of channel/generator/parameter matching on a fixed rotor micro-Doppler test domain, with paired factorial evaluation, path auditing, interactions, and explicit limitations.
+本科阶段围绕计算电磁、旋翼微多普勒分析与无人系统仿真开展的科研与工程实践记录。
 
-QuadControl presents a modular quadrotor dynamics and flight-control simulation platform with IMU measurement, minimal attitude estimation, observation contracts, and deterministic validation. It is an engineering showcase, not a complete real-vehicle flight stack.
+## Research Areas
+
+- Computational Electromagnetics
+- Micro-Doppler Sensing
+- UAV Simulation
+- Dynamics and Control
+
+## Project Overview
+
+| Project | Type | Focus | Capability |
+| ------- | ---- | ----- | ---------- |
+| [EM-Trace](projects/em-trace/) | 工程工具 | 工程链与计算电磁工具 | 参数化建模、CST 仿真与信号链分析 |
+| [LowAlt-MD](projects/lowalt-md/) | 研究项目 | 低空旋翼微多普勒物理机制研究 | 物理建模、特征分析与机理解释 |
+| [EMvision](projects/emvision/) | 研究项目 | 受控电磁衰减与域因素失配条件下的微多普勒识别实验设计与归因审计 | 合成实验、域因素分析与协议内归因审计 |
+| [QuadControl-Lab](projects/QuadControl-Lab/) | 仿真平台 | 四旋翼动力学、控制与姿态估计仿真 | 动力学建模、控制仿真与最小姿态估计接口验证 |
+
+## Research Map
+
+下图表示研究方向的演进与组织关系，不表示项目之间存在严格依赖。
+
+```mermaid
+flowchart LR
+    accTitle: Research Direction Map
+    accDescr: The portfolio contains an electromagnetic sensing direction that evolves from EM-Trace through LowAlt-MD to EMvision, alongside an independent autonomous systems direction represented by QuadControl-Lab. The arrows indicate research direction evolution, not strict project dependencies.
+
+    subgraph electromagnetic_sensing ["Electromagnetic Sensing"]
+        em_trace["EM-Trace"] -.->|方向演进| lowalt_md["LowAlt-MD"]
+        lowalt_md -.->|方向演进| emvision["EMvision"]
+    end
+
+    subgraph autonomous_systems ["Autonomous Systems"]
+        quadcontrol_lab["QuadControl-Lab"]
+    end
+```
+
+## Technical Skills
+
+| Skill | Evidence |
+| ----- | -------- |
+| Python | EMvision 的实验与分析流程；QuadControl-Lab 的仿真与验证 |
+| CST | EM-Trace 的参数化全波仿真与结果提取 |
+| Electromagnetic Modeling | EM-Trace、LowAlt-MD 与 EMvision 的电磁建模和信号分析 |
+| Micro-Doppler Analysis | LowAlt-MD 的机理分析；EMvision 的受控合成实验与协议内归因审计 |
+| Control Simulation | QuadControl-Lab 的动力学与闭环控制仿真 |
+| Attitude Estimation / Observation Interface | QuadControl-Lab 的最小姿态估计与控制器观测接口验证 |
+
+## Evidence Policy
+
+本作品集包含以下证据类型：
+
+- 数值仿真（numerical simulation）
+- 合成实验（synthetic experiments）
+- 工程验证（engineering validation）
+
+当前内容不包含真实雷达实测验证，也不包含实机飞行验证。各项目结论应在对应的模型假设、仿真条件和验证范围内理解。
+
+## Contact
