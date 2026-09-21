@@ -1,102 +1,94 @@
 # QuadControl-Lab
 
-*模块化四旋翼飞控仿真与姿态估计验证平台。*
+模块化四旋翼动力学、控制与最小姿态估计接口验证平台。
 
 ---
 
-## 📋 Overview
+## Project Overview
 
-QuadControl-Lab is a modular quadrotor flight-control simulation project focused on:
+| Field | Content |
+| ----- | ------- |
+| Project Type | Engineering Simulation Platform |
+| Status | Completed showcase / validation platform |
+| Role | 仿真架构、动力学与控制链路、最小姿态估计接口及验证流程开发 |
+| Keywords | Quadrotor Dynamics, Flight Control, IMU, Attitude Estimation, RK4, Validation |
 
-- rigid-body dynamics and actuator modeling;
-- attitude/rate flight-control architecture;
-- IMU measurement and minimal attitude estimation;
-- deterministic, auditable experiment validation.
+本项目用于建立一套模块边界清晰、可替换且可审计的四旋翼仿真平台，以便分别检查动力学、执行器、控制器、传感器和观测接口。工程上重点解决不同模块之间的状态与坐标约定、控制分配、执行器状态更新、观测来源和验证证据难以追踪的问题。
 
-The project is an undergraduate self-developed research platform. It is not presented as a complete autonomous aircraft or a production flight stack.
+当前验证范围限定为确定性数值仿真、有限场景闭环响应、最小姿态估计接口和自动化工程验证。项目不代表完整自主飞行器、生产级飞控系统或真实飞行验证。
 
-## 🏗️ System architecture
+## Problem and Motivation
+
+- 模块化仿真架构用于分离物理模型、控制逻辑、执行器和数值积分器，使各模块能够独立检查和替换，并减少耦合实现对问题定位的干扰。
+- `observation boundary` 用于显式区分 `IDEAL_BENCHMARK` 与 `ESTIMATED` 数据来源，同时记录字段有效性和 consumer contract，避免控制器无意使用不可用状态或隐式 truth fallback。
+- `deterministic validation` 用于固定随机种子、仿真时间、参数身份和输出证据，使有限场景可以复现，并将控制饱和、分配失败、电机限幅和物理限制分别记录。
+
+这些设计服务于仿真平台的工程验证，不构成 HIL、实机飞行性能或飞行安全证明。
+
+## Architecture / Method
 
 ![QuadControl-Lab modular architecture](assets/quadcontrol_architecture.svg)
 
-*Figure 1: Two explicit observation paths feed the same attitude/rate control and plant architecture. The `ESTIMATED` path is attitude-only.*
+*项目整体架构图：两条显式 observation path 接入同一控制与动力学链；`ESTIMATED` 仅用于姿态/角速度内环接口验证。*
 
 ```mermaid
-flowchart TB
-    accTitle: QuadControl-Lab system architecture
-    accDescr: IMU measurements can pass through a minimal attitude estimator or the formal runner can use an explicit benchmark truth observation. Both paths cross an observation boundary before controller, mixer, motor, rigid-body dynamics, and integrator stages.
+flowchart LR
+    accTitle: QuadControl-Lab Core Pipeline
+    accDescr: IDEAL_BENCHMARK and ESTIMATED observation paths enter a shared boundary before the controller, mixer, motor, rigid-body dynamics, and RK4 integration stages.
 
-    truth_state["Committed QuadState\ntruth"]
-    ideal_path["IDEAL_BENCHMARK\ntruth observation"]
-    imu_path["IMU → ImuMeasurement\n→ attitude estimator"]
-    observation["ControllerObservation\nsource + field validity"]
-    adapter["Observation boundary\nconsumer validity"]
-    controller["ControllerPipeline\nattitude + rate"]
-    mixer["Mixer / allocation"]
-    motor["Motor state\nRotorCommand → RotorState"]
-    dynamics["Rigid-body dynamics"]
-    integrator["SimulationClock + RK4"]
-
-    truth_state --> ideal_path --> observation
-    truth_state --> imu_path --> observation
-    observation --> adapter --> controller --> mixer --> motor --> dynamics --> integrator --> truth_state
+    ideal_benchmark["IDEAL_BENCHMARK"] --> observation_boundary["Observation boundary"]
+    estimated["ESTIMATED"] --> observation_boundary
+    observation_boundary --> controller["Controller"]
+    controller --> mixer["Mixer"]
+    mixer --> motor["Motor"]
+    motor --> dynamics["Dynamics"]
+    dynamics --> rk4["RK4"]
 ```
 
-The two paths are deliberately distinct:
+`IDEAL_BENCHMARK` 使用已提交的 truth state 构造完整观测；`ESTIMATED` 采用 `IdealImu → ImuMeasurement → MinimalAttitudeEstimator → ControllerObservation` 路径，仅提供姿态/角速度有效字段。两条路径均通过 observation boundary 后进入 `Controller → Mixer → Motor → Dynamics → RK4` 主链。
 
-- `IDEAL_BENCHMARK`: committed truth → full observation → controller-facing adapter.
-- `ESTIMATED`: `IdealImu` → `ImuMeasurement` → `MinimalAttitudeEstimator` → partial observation → `ATTITUDE_INNER_LOOP` adapter.
+## My Contribution
 
-The formal V1 plant artifacts use `IDEAL_BENCHMARK`. The `ESTIMATED` path has standalone observation and attitude-inner-loop assembly evidence; it does not claim full-state estimated flight performance.
+- **仿真架构设计**：建立分层依赖、`SimulationClock`、固定步长 RK4、状态感知调度和多速率更新边界。
+- **动力学、执行器和传感器接口实现**：实现刚体平动/转动方程、四元数状态、坐标系感知的力与力矩聚合、Mixer、转子/电机状态模型和 IMU specific-force 模型。
+- **IMU 与最小姿态估计接口**：实现 `IdealImu`、`ImuMeasurement` 和 `MinimalAttitudeEstimator` 到姿态内环的受限观测路径。
+- **Observation contract 与 provenance 设计**：记录观测来源、聚合有效性、consumer-specific 字段有效性、分配失败和执行器限制来源。
+- **确定性实验与自动化验证**：组织有限场景实验、参数哈希、Git commit、全速率日志和 JSON provenance；原仓库最终验证记录为 1129 tests passed，并通过 `ruff` 与 `mypy` 检查。
 
-## 🧱 What I built
+上述贡献构成仿真与验证平台，不表示完成了完整飞控系统或真实飞行闭环。
 
-- **Rigid-body dynamics** — translational/rotational equations, quaternion state representation, frame-aware force and torque aggregation.
-- **Controller pipeline** — fixed attitude → angular-rate call boundary with explicit reference, thrust, timing, and allocation-feedback contracts.
-- **Mixer and allocation** — wrench-to-rotor command mapping, feasibility reporting, and explicit allocation-failure provenance.
-- **Rotor/motor model** — generic N-rotor interfaces, exact quasi-static path, and first-order rotor-state dynamics.
-- **Formal simulation chain** — `SimulationClock`, independent fixed-step RK4, state-aware scheduler, and actuator-to-state plant assembly.
-- **Sensing, estimation, and validation** — IMU specific-force model, `MinimalAttitudeEstimator`, observation contracts, and deterministic experiment artifacts.
+## Representative Results
 
-## 🧭 Engineering design
+| Result | Evidence-backed observation | Boundary |
+| ------ | --------------------------- | -------- |
+| 10° roll attitude step | 最终姿态误差约 `0.004746°`，settling-like time 为 `1.383 s` | `IDEAL_BENCHMARK` 下的 deterministic simulation；不代表真实飞行性能或位置保持能力 |
+| 0.05 N·m body torque pulse | 最大姿态误差约 `1.603°`，恢复时间约 `0.69 s` | `IDEAL_BENCHMARK` 下的有限确定性扰动场景；不证明全局鲁棒性或飞行安全 |
+| ESTIMATED observation path | 完成姿态和角速度有效观测、字段有效性及控制器边界验证；位置和速度字段无效 | `ESTIMATED` 接口级 deterministic validation；不是完整 estimated-flight 或真实传感器闭环结果 |
 
-- `verification != simulation`: the formal integrator is independent of verification-only numerical paths.
-- Layered dependencies prevent controllers from importing simulation and prevent estimators from accessing truth or controller internals.
-- Physics, observation, control, and actuator updates have explicit multi-rate boundaries; RK4 stages use held plant input.
-- `ControllerObservation` separates source provenance, aggregate validity, and consumer-specific field validity.
-- Deterministic seeds, simulated time, parameter hashes, Git commits, full-rate logs, and JSON provenance support replay.
-- Allocation failure, controller saturation, motor-state limiting, and physical limitation remain separate event categories.
+所有数值均来自原仓库已有实验产物，本展示页未重新运行实验。
 
-## 🧪 Validation
+## Figures / Evidence
 
-Existing source evidence is summarized in [`evidence/validation_summary.md`](evidence/validation_summary.md).
+1. [Project architecture](assets/quadcontrol_architecture.svg)：项目整体架构图，展示 observation path、控制链和动力学主链。
+2. [Attitude step response](assets/attitude_step_response.svg)：确定性姿态阶跃响应示例；图中曲线用于展示，指标来自原始 full-rate artifact。
 
-| Scenario | Evidence-backed result | Meaning |
-| --- | --- | --- |
-| Hover baseline | 10 s / 10,000 physics steps; final altitude ≈ 1.0 m; allocation failure 0; motor limiting 0 | Formal benchmark chain and artifact logging |
-| Attitude step | +10° roll; peak geodesic error 9.9998°; final error 0.004746°; settling-like time 1.383 s | Attitude/rate response; not position hold |
-| Initial perturbation | +2° initial roll; final error 0.00095°; settling-like time 0.665 s | Finite deterministic initial-condition response |
-| Torque disturbance | 0.05 N·m, 0.1 s Body FLU roll/pitch pulse; max error 1.603°; recovery time 0.69 s | Finite deterministic disturbance response |
-| ESTIMATED inner loop | `ESTIMATED` source; attitude/angular velocity valid; position/velocity invalid; deterministic adapter/controller-boundary tests | Observation path validation, not full estimated flight |
+![Deterministic attitude-step response](assets/attitude_step_response.svg)
 
-All numeric claims above come from the existing source repository artifacts. No new experiment was run for this profile page.
+*确定性姿态阶跃响应示例；该结果使用 `IDEAL_BENCHMARK`，不代表真实飞行性能。*
 
-## ✅ Automated verification
+## Limitations
 
-The source repository's final verification recorded **1129 tests passed**. `ruff check .` and `mypy core controllers tests simulation estimation experiments` also passed. Test count is an engineering guardrail, not the project's scientific contribution.
+- 无实机飞行验证，也不声称真实飞行性能或飞行安全。
+- 无 HIL 验证。
+- 无完整位置/速度估计，不支持基于估计位置或速度的位置保持和高度保持。
+- 无 EKF，也未集成 GPS、磁力计、气压计或完整 sensor fusion。
+- 无真实传感器闭环；当前 IMU 与 `ESTIMATED` 路径属于确定性仿真和接口验证。
+- 当前 `ESTIMATED` 路径仅用于姿态/角速度内环消费，不构成持久化的 full-plant estimated-flight 结果。
+- 有限场景结果不证明全局稳定性、鲁棒性、收敛性或对未测试工况的泛化能力。
 
-## ⚠️ Limitations
+## Repository / Evidence
 
-- No EKF or full position/velocity estimator.
-- No GPS, magnetometer, barometer, or sensor fusion.
-- No position hold or altitude hold from estimated position/velocity.
-- No HIL, real vehicle, or real-flight validation.
-- The current `ESTIMATED` path is limited to attitude/rate inner-loop consumption.
-- Finite-scenario results do not prove global stability, robustness, convergence, or flight safety.
-
-## 🔗 Original repository and evidence
-
-- [Original QuadControl-Lab source repository](https://github.com/feiranzhao15077/QuadControl-Lab)
-- [Final architecture source](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/project/quadcontrol_architecture.md)
-- [Validation summary source](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/project/validation_summary.md)
-- [Source Phase 6 status index](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/simulation/phase6_status.md)
+- **Original Repository**：[QuadControl-Lab source repository](https://github.com/feiranzhao15077/QuadControl-Lab)
+- **Evidence**：[Portfolio evidence index](evidence/validation_summary.md)；[Source Phase 6 status index](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/simulation/phase6_status.md)
+- **Validation Summary**：[Validation summary source](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/project/validation_summary.md)
+- **Architecture Source**：[Final architecture source](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/project/quadcontrol_architecture.md)
