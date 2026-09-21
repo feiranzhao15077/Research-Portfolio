@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">QuadControl-Lab modular flight-control architecture</title>
+  <desc id="desc">Two explicit observation paths feed an attitude and rate controller, then mixer allocation, actuator policy, rotor state, motor force mapping, rigid-body dynamics, and fixed-step integration. The estimated path is attitude-only.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 34px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 17px Arial, sans-serif; fill: #475569; }
+      .section { font: 700 18px Arial, sans-serif; fill: #0f172a; }
+      .node { stroke-width: 2; rx: 14; }
+      .node_text { font: 600 17px Arial, sans-serif; text-anchor: middle; dominant-baseline: middle; }
+      .small { font: 400 14px Arial, sans-serif; fill: #475569; text-anchor: middle; }
+      .edge { stroke: #334155; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 9 8; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="#f8fafc"/>
+  <rect x="36" y="30" width="1528" height="840" rx="22" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="80" y="86" class="title">QuadControl-Lab</text>
+  <text x="80" y="120" class="subtitle">Modular quadrotor dynamics, flight-control, estimation, and deterministic validation</text>
+
+  <text x="90" y="176" class="section">Observation paths</text>
+  <text x="90" y="198" class="small" text-anchor="start">Explicit provenance; no silent fallback between sources</text>
+
+  <!-- IDEAL_BENCHMARK path -->
+  <rect x="80" y="230" width="190" height="64" class="node" fill="#e0f2fe" stroke="#0284c7"/>
+  <text x="175" y="255" class="node_text">Committed truth</text>
+  <text x="175" y="278" class="small">QuadState</text>
+  <rect x="310" y="230" width="230" height="64" class="node" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="425" y="255" class="node_text">IDEAL_BENCHMARK</text>
+  <text x="425" y="278" class="small">benchmark provider</text>
+  <rect x="580" y="230" width="220" height="64" class="node" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="690" y="255" class="node_text">Full observation</text>
+  <text x="690" y="278" class="small">all fields valid</text>
+  <path d="M 270 262 L 310 262" class="edge"/>
+  <path d="M 540 262 L 580 262" class="edge"/>
+
+  <!-- ESTIMATED path -->
+  <rect x="80" y="350" width="190" height="64" class="node" fill="#fef3c7" stroke="#d97706"/>
+  <text x="175" y="375" class="node_text">IMU sensor</text>
+  <text x="175" y="398" class="small">IdealImu</text>
+  <rect x="310" y="350" width="220" height="64" class="node" fill="#fef3c7" stroke="#d97706"/>
+  <text x="420" y="375" class="node_text">ImuMeasurement</text>
+  <text x="420" y="398" class="small">Body FLU gyro + specific force</text>
+  <rect x="570" y="350" width="250" height="64" class="node" fill="#fef3c7" stroke="#d97706"/>
+  <text x="695" y="375" class="node_text">MinimalAttitudeEstimator</text>
+  <text x="695" y="398" class="small">gyro propagation + gravity cue</text>
+  <rect x="860" y="350" width="230" height="64" class="node" fill="#fef3c7" stroke="#d97706"/>
+  <text x="975" y="375" class="node_text">ESTIMATED</text>
+  <text x="975" y="398" class="small">attitude/rate fields valid</text>
+  <path d="M 270 382 L 310 382" class="edge"/>
+  <path d="M 530 382 L 570 382" class="edge"/>
+  <path d="M 820 382 L 860 382" class="edge"/>
+
+  <!-- merge -->
+  <rect x="1140" y="285" width="270" height="76" class="node" fill="#ede9fe" stroke="#7c3aed"/>
+  <text x="1275" y="314" class="node_text">ConsumerObservationAdapter</text>
+  <text x="1275" y="340" class="small">ATTITUDE_INNER_LOOP requirement</text>
+  <path d="M 800 262 C 900 262 1000 262 1140 310" class="edge dashed"/>
+  <path d="M 1090 382 C 1110 382 1120 365 1140 340" class="edge dashed"/>
+  <path d="M 175 294 L 175 350" class="edge dashed"/>
+
+  <!-- common control/plant path -->
+  <text x="90" y="500" class="section">Common control and plant path</text>
+  <rect x="80" y="545" width="210" height="70" class="node" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="185" y="570" class="node_text">ControllerPipeline</text>
+  <text x="185" y="594" class="small">attitude + rate</text>
+  <rect x="340" y="545" width="190" height="70" class="node" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="435" y="570" class="node_text">Mixer</text>
+  <text x="435" y="594" class="small">wrench allocation</text>
+  <rect x="580" y="545" width="210" height="70" class="node" fill="#f1f5f9" stroke="#64748b"/>
+  <text x="685" y="570" class="node_text">ActuatorPolicy</text>
+  <text x="685" y="594" class="small">HOLD_LAST_VALID_COMMAND</text>
+  <rect x="840" y="545" width="210" height="70" class="node" fill="#f1f5f9" stroke="#64748b"/>
+  <text x="945" y="570" class="node_text">Rotor state model</text>
+  <text x="945" y="594" class="small">RotorCommand → RotorState</text>
+  <rect x="1100" y="545" width="190" height="70" class="node" fill="#f1f5f9" stroke="#64748b"/>
+  <text x="1195" y="570" class="node_text">core.motor</text>
+  <text x="1195" y="594" class="small">force/torque mapping</text>
+  <rect x="1340" y="545" width="180" height="70" class="node" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="1430" y="570" class="node_text">Dynamics + RK4</text>
+  <text x="1430" y="594" class="small">state commit</text>
+
+  <path d="M 1275 361 C 1275 450 185 450 185 545" class="edge dashed"/>
+  <path d="M 290 580 L 340 580" class="edge"/>
+  <path d="M 530 580 L 580 580" class="edge"/>
+  <path d="M 790 580 L 840 580" class="edge"/>
+  <path d="M 1050 580 L 1100 580" class="edge"/>
+  <path d="M 1290 580 L 1340 580" class="edge"/>
+  <path d="M 1430 615 C 1430 690 185 690 185 615" class="edge dashed"/>
+
+  <rect x="80" y="740" width="1440" height="74" rx="14" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="800" y="770" class="node_text">Scope note</text>
+  <text x="800" y="796" class="small">ESTIMATED is validated for an attitude/rate inner-loop observation path; no EKF, position/velocity estimator, HIL, or real-flight claim.</text>
+</svg>
