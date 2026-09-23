@@ -115,6 +115,7 @@ R3 未见高度结果及完整数值表保留在 [`evidence/validation_summary.m
 
 ## Repository / Evidence
 
+- **Selected Implementation**: [LowAlt-MD selected code](../../selected-code/lowalt-md/). This snapshot is provided for implementation review only and is not a complete reproduction package.
 - **Original Repository**：[LowAlt-MD source repository](https://github.com/feiranzhao15077/LowAlt-MD)
 - **Validation Summary**：[Portfolio validation summary](evidence/validation_summary.md)
 - **Scientific Status Freeze**：[Physics Model v2 scientific status freeze](https://github.com/feiranzhao15077/LowAlt-MD/blob/master/docs/final/LowAlt-MD_physics_v2_scientific_status_freeze_v1.md)

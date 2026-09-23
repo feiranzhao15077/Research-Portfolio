@@ -125,6 +125,7 @@ flowchart TB
 
 ## Repository / Evidence
 
+- **Selected Implementation**: [EMvision selected code](../../selected-code/emvision/). This snapshot is provided for implementation review only and is not a complete reproduction package.
 - **Original Repository**：[EMvision source repository](https://github.com/feiranzhao15077/EMvision)
 - **Frozen Factorial Results**：[n=20 full-factorial results](https://github.com/feiranzhao15077/EMvision/blob/master/outputs/em-sense/data/factorial_attribution_n20/results.json)
 - **v011 Seed-level Audit**：[v011 logits, prediction counts, and feature audit](https://github.com/feiranzhao15077/EMvision/blob/master/outputs/em-sense/docs/validation/v011_n20_logits_features.md)

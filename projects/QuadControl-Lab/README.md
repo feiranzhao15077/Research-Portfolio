@@ -88,6 +88,7 @@ flowchart LR
 
 ## Repository / Evidence
 
+- **Selected Implementation**: [QuadControl-Lab selected code](../../selected-code/quadcontrol-lab/). This snapshot is provided for implementation review only and is not a complete reproduction package.
 - **Original Repository**：[QuadControl-Lab source repository](https://github.com/feiranzhao15077/QuadControl-Lab)
 - **Evidence**：[Portfolio evidence index](evidence/validation_summary.md)；[Source Phase 6 status index](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/simulation/phase6_status.md)
 - **Validation Summary**：[Validation summary source](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/project/validation_summary.md)

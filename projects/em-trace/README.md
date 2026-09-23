@@ -102,6 +102,7 @@ flowchart TB
 
 ## Repository / Evidence
 
+- **Selected Implementation**: [EM-Trace selected code](../../selected-code/em-trace/). This snapshot is provided for implementation review only and is not a complete reproduction package.
 - **Original Repository**：[EM-Trace repository](https://github.com/feiranzhao15077/EM-Trace)
 - **Engineering Audit**：[Portfolio engineering audit](evidence/engineering_audit.md)
 - **Scientific Status Freeze**：[EM-Trace scientific status freeze](https://github.com/feiranzhao15077/EM-Trace/blob/main/docs/final/EM-Trace_scientific_status_freeze_v1.md)

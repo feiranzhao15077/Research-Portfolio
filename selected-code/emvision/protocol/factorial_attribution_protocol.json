@@ -1,0 +1,185 @@
+{
+  "version": "2026-08-29-factorial-attribution-v1",
+  "status": "frozen_after_legacy_results_before_factorial_implementation_and_outputs",
+  "design_origin": "Reviewer-driven correction for path dependence. This is not claimed as preregistered before the existing cross-generator results.",
+  "research_question": "How much of the fixed-target Macro-F1 change is assigned to training-side channel, generator-family and parameter-distribution matching after averaging the marginal contribution over all six factor orders, and how large are factor interactions and order sensitivity?",
+  "scope": "Simulation-only attribution audit on the existing continuous/sparse analytic generator family. It is neither physical validation nor an order-free causal decomposition of real radar performance.",
+  "source_lock": {
+    "results": "data/cross_generator/results.json",
+    "results_sha256": "84e39ee48a50e2122bb6c87dcc7dbf2ed15b4e575e60a11697455eb9ebec57cd",
+    "protocol": "docs/validation/cross_generator_protocol.json",
+    "protocol_sha256": "0eef31dd595891e2e00a4d6c9e5c6c32def11cdfb638a8d91da336ac4a8c10c9",
+    "generator_source": "src/cross_generator.py",
+    "generator_source_sha256": "152701f84a3d177b6f32b7a36c7bf1ee4886837b6d823c1a17d7a6d6532cc98a",
+    "model_source": "src/robustness_generalization.py",
+    "model_source_sha256": "55a29283936380da6c4c86ff10450c55fdbaed00263f9782c891b15461b7993a",
+    "artifact_rule": "Each seed NPZ and model artifact must match the per-run SHA-256 recorded in the locked source results."
+  },
+  "factor_bit_order": ["channel_matching", "generator_matching", "parameter_matching"],
+  "factors": {
+    "channel_matching": {
+      "bit": "C",
+      "zero": "training observations at fp=0 GHz, condition index 0",
+      "one": "training observations at fp=9.5 GHz, condition index 1, matching the fixed target channel"
+    },
+    "generator_matching": {
+      "bit": "G",
+      "zero": "continuous uniform-blade integral generator",
+      "one": "sparse point-scatterer blade generator, matching the fixed target generator"
+    },
+    "parameter_matching": {
+      "bit": "P",
+      "zero": "source ranges: rotation 60-100 Hz, blade length 0.05-0.10 m, beta 30-70 deg",
+      "one": "joint-holdout target ranges: rotation 105-120 Hz, blade length 0.105-0.120 m, beta 75-90 deg"
+    }
+  },
+  "seeds": [0, 1, 2, 3, 4, 5],
+  "seed_rules": {
+    "paired_training_latent_seed": "90000 + seed",
+    "paired_training_scatter_seed": "220000 + seed",
+    "fixed_test_latent_seed": "110000 + seed, inherited from the locked source result",
+    "fixed_test_scatter_seed": "240000 + seed, inherited from the locked source result",
+    "model_initialization_seed": "seed, identical across all eight corners within a run",
+    "bootstrap_seed": 290000
+  },
+  "sample_budget": {
+    "train_per_class": 200,
+    "test_per_class": 50,
+    "classes": [2, 3, 4],
+    "training_records_per_corner": 600,
+    "test_records_shared_by_all_corners_per_seed": 150,
+    "independent_inference_units": "six synthetic seeds; corners, factors, paths and test predictions are paired within seed"
+  },
+  "fixed_target": {
+    "source_array": "test__joint_holdout__sparse_raw[1] and test__joint_holdout__y from each locked data/cross_generator/seed_{seed}.npz",
+    "generator": "sparse",
+    "channel_fp_ghz": 9.5,
+    "parameter_domain": "joint_holdout",
+    "reuse_rule": "Exactly the same target feature matrix and labels are used for every corner and must not enter fitting, scaling or model selection."
+  },
+  "strictly_paired_training_library": {
+    "p0_source": "Load continuous_source__continuous_raw, continuous_source__sparse_raw, continuous_source__latent, continuous_source__noise_raw, continuous_source__scatter_positions_fraction, continuous_source__scatter_weights, continuous_source__scatter_active and continuous_source__y from the locked per-seed NPZ.",
+    "p1_generation": "Call generate_paired_generator_bank with n_per_class=200, seed=90000+seed, scatter_seed=220000+seed, the locked cross-generator configuration and the joint-holdout ranges.",
+    "pairing_invariants": [
+      "p0 and p1 labels and record order are exactly equal",
+      "blade count, alpha, distance and phase latent columns are exactly equal",
+      "rotation, length and beta normalized quantiles under their declared ranges agree within 1e-12",
+      "noise_raw agrees within 1e-12 and the p1 full complex-noise SHA-256 equals the recorded p0 continuous_source noise SHA-256",
+      "sparse scatter positions, weights and active masks are exactly equal",
+      "all C and G corners are selected from the paired arrays without regeneration or resampling"
+    ]
+  },
+  "corners": {
+    "v000": "P0 bank continuous_raw[0]",
+    "v100": "P0 bank continuous_raw[1]",
+    "v010": "P0 bank sparse_raw[0]",
+    "v110": "P0 bank sparse_raw[1]",
+    "v001": "P1 bank continuous_raw[0]",
+    "v101": "P1 bank continuous_raw[1]",
+    "v011": "P1 bank sparse_raw[0]",
+    "v111": "P1 bank sparse_raw[1]"
+  },
+  "model": {
+    "primary": "mlp",
+    "configuration": {
+      "hidden": 32,
+      "lr": 0.08,
+      "epochs": 200,
+      "batch": 32
+    },
+    "preprocessing": "Per-corner seven-feature mean and standard deviation fitted on that corner's training data only, using fit_baseline. No tuning, early stopping or test-conditioned selection.",
+    "secondary_models": "Not part of v1. Existing SVM and RF results remain descriptive. Any future full-factor secondary analysis requires a new frozen protocol version."
+  },
+  "metric": {
+    "primary": "Macro-F1 on the fixed sparse 9.5-GHz joint-holdout test bank",
+    "secondary": ["accuracy", "per-class recall", "confusion matrix"],
+    "corner_value_symbol": "v_cgp, computed separately for each seed"
+  },
+  "attribution": {
+    "legacy_path": ["C", "G", "P"],
+    "all_paths": [
+      ["C", "G", "P"],
+      ["C", "P", "G"],
+      ["G", "C", "P"],
+      ["G", "P", "C"],
+      ["P", "C", "G"],
+      ["P", "G", "C"]
+    ],
+    "general_shapley_formula": "phi_i=(1/6)*sum_over_all_6_paths[v(S_before_i union {i})-v(S_before_i)]",
+    "explicit_formulas": {
+      "phi_C": "(v100-v000)/3 + ((v110-v010)+(v101-v001))/6 + (v111-v011)/3",
+      "phi_G": "(v010-v000)/3 + ((v110-v100)+(v011-v001))/6 + (v111-v101)/3",
+      "phi_P": "(v001-v000)/3 + ((v101-v100)+(v011-v010))/6 + (v111-v110)/3"
+    },
+    "efficiency_identity": "phi_C + phi_G + phi_P = v111 - v000",
+    "path_reporting": "For each seed, retain the three stepwise marginal contributions under every path. Report each factor's six path means, Shapley mean, minimum, maximum and range.",
+    "interactions": {
+      "CG_given_P0": "v110-v100-v010+v000",
+      "CG_given_P1": "v111-v101-v011+v001",
+      "CP_given_G0": "v101-v100-v001+v000",
+      "CP_given_G1": "v111-v110-v011+v010",
+      "GP_given_C0": "v011-v010-v001+v000",
+      "GP_given_C1": "v111-v110-v101+v100",
+      "three_way": "v111-v110-v101-v011+v100+v010+v001-v000"
+    }
+  },
+  "uncertainty": {
+    "primary_unit": "seed block",
+    "bootstrap_type": "paired nonparametric cluster bootstrap over complete seed blocks",
+    "bootstrap_repetitions": 50000,
+    "bootstrap_confidence_interval": "two-sided percentile 95%",
+    "resampling_rule": "Sample six seed IDs with replacement. For each sampled block retain all eight corner values and recompute all path marginals, Shapley values, interactions and total gain before averaging.",
+    "additional_reporting": "Report all six raw seed values and Student-t 95% intervals for compatibility. Bootstrap intervals are descriptive and exclude physical-model uncertainty.",
+    "multiplicity": "No familywise discovery claim. The three Shapley intervals and interaction intervals are reported jointly and descriptively; no result-driven factor selection."
+  },
+  "acceptance": {
+    "hard_integrity_gates": {
+      "source_and_artifact_hashes": "exact",
+      "pairing_float_absolute_tolerance": 1e-12,
+      "metric_replay_absolute_tolerance": 1e-12,
+      "shapley_efficiency_absolute_tolerance": 1e-12,
+      "path_mean_equals_explicit_shapley_absolute_tolerance": 1e-12,
+      "required_completed_seeds": 6,
+      "required_corners_per_seed": 8,
+      "required_paths": 6,
+      "nonfinite_values_allowed": false,
+      "overwrite_existing_output_allowed": false
+    },
+    "predeclared_interpretation_lines": {
+      "minimum_absolute_total_gain_for_relative_ratios": 0.05,
+      "material_absolute_interaction_macro_f1": 0.05,
+      "order_stable_absolute_path_range_macro_f1": 0.05,
+      "order_stable_relative_path_range_fraction_of_total_gain": 0.25,
+      "legacy_path_close_to_shapley_absolute_difference_macro_f1": 0.05,
+      "direction_stable_rule": "All six path-order mean marginals have the same sign and at least five of six per-seed Shapley values have that sign.",
+      "resolved_direction_rule": "The paired seed-bootstrap 95% interval for the mean Shapley value excludes zero. This is descriptive for the synthetic protocol, not a universal significance claim."
+    },
+    "claim_rule": "Favorable signs are not an execution acceptance criterion. If order-stability or legacy-path closeness fails, replace the original independent-error-source wording with path-dependent staged gaps and report Shapley plus interactions."
+  },
+  "smoke_test": {
+    "seeds": [0, 1],
+    "train_per_class": 4,
+    "test_per_class": 2,
+    "mlp_epochs": 2,
+    "bootstrap_repetitions": 200,
+    "data_rule": "Generate both P0 and P1 paired banks and a separate fixed target bank at smoke size. Do not subset the locked full-size banks.",
+    "output": "docs/validation/factorial_attribution_smoke",
+    "purpose": "Execution and verifier check only; no scientific inference."
+  },
+  "formal_output": "data/factorial_attribution",
+  "expected_cost": {
+    "basis": "The locked cross-generator run required about 79-91 seconds per seed while generating several banks and fitting three model families. This protocol reuses P0 and target banks, generates one P1 bank and fits eight MLPs per seed.",
+    "estimated_wall_time": "approximately 3-6 minutes for six seeds plus independent replay verification on the current host",
+    "estimated_peak_memory": "below 0.5 GB when the generated full time-domain noise is hashed and discarded before fitting",
+    "estimated_new_disk": "below 15 MB when only paired features, predictions, models, summaries and hashes are saved"
+  },
+  "failure_and_downgrade": [
+    "A smoke-test integrity failure blocks the formal run. Fix the implementation, increment the protocol version if semantics change, and do not silently retry.",
+    "A pairing, source-hash, replay, nonfinite or Shapley-identity failure marks the formal run failed. Preserve the partial directory and do not overwrite it.",
+    "If abs(v111-v000) is below 0.05, relative attribution and order-range ratios are undefined; report absolute effects only.",
+    "If any factor fails direction or order-stability lines, retain all values and downgrade the manuscript to path-dependent staged gaps. Do not tune seeds, models, ranges or thresholds.",
+    "If an interval crosses zero, report the factor direction as unresolved in this synthetic sample. Do not add seeds after inspecting results under this protocol.",
+    "No measured, CST, physical-plasma or real-radar claim may be introduced regardless of numerical outcome."
+  ],
+  "stopping_rule": "After a verified smoke test, run all six frozen seeds and all eight corners exactly once. Preserve negative and nonmonotonic effects. No performance-driven tuning, corner removal, seed replacement, early stopping or post-hoc threshold change."
+}

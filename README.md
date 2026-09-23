@@ -2,6 +2,9 @@
 
 围绕计算电磁、旋翼微多普勒分析与无人系统仿真开展的本科科研与工程实践。
 
+- [Research Overview PDF](docs/Undergraduate_Research_Project_Overview.pdf)
+- [Selected Code](selected-code/)
+
 ---
 
 ## About Me
