@@ -64,9 +64,9 @@ def _freeze_vector(value: np.ndarray, size: int, name: str) -> np.ndarray:
         raise StateError(f"{name} must have shape ({size},), got {array.shape}")
     if not np.all(np.isfinite(array)):
         raise StateError(f"{name} contains a non-finite component")
-    frozen = np.array(array, dtype=float, copy=True)
-    frozen.setflags(write=False)
-    return frozen
+    # A read-only flag on an owning ndarray can be re-enabled by its holder.
+    # Immutable bytes own this snapshot, so setflags(write=True) cannot reopen it.
+    return np.frombuffer(array.tobytes(), dtype=float)
 
 
 @dataclass(frozen=True, slots=True)

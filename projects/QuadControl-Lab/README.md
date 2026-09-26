@@ -1,95 +1,85 @@
 # QuadControl-Lab
 
-构建模块化四旋翼动力学与控制仿真平台，集成刚体动力学、执行器建模、IMU 与最小姿态估计接口，并通过确定性仿真验证控制与观测链路。
-
----
+面向观测来源与估计假设影响分析的可审计四旋翼闭环仿真平台。
 
 ## Project Overview
 
 | Field | Content |
-| ----- | ------- |
-| Project Type | Engineering Simulation Platform |
-| Status | Completed showcase / validation platform |
-| Role | Modular dynamics simulation, flight-control architecture, observation interface design, deterministic validation and provenance |
-| Keywords | Quadrotor Dynamics, Flight Control, IMU, Attitude Estimation, RK4, Validation |
+| --- | --- |
+| Project Type | Auditable Quadrotor Simulation / Controlled Mechanism Study |
+| Status | Completed showcase / final synthetic result frozen |
+| Role | Dynamics and control simulation, observation-interface design, paired-experiment implementation, mechanism audit and provenance |
+| Keywords | Quadrotor Dynamics, RK4, Observation Contract, Paired Evaluation, Attitude Estimation, Deterministic Validation |
 
-本项目用于建立一套模块边界清晰、可替换且可审计的四旋翼仿真平台，以便分别检查动力学、执行器、控制器、传感器和观测接口。工程上重点解决不同模块之间的状态与坐标约定、控制分配、执行器状态更新、观测来源和验证证据难以追踪的问题。
+本项目研究：当 plant、controller、mixer、actuator、scheduler 和实验条件保持一致、仅改变控制器消费的 observation source 时，闭环姿态行为如何变化？在所用最小姿态估计器中，specific-force gravity-direction assumption 又如何与估计 roll 的变化相联系？这是受控合成仿真与机制审计，不是新控制算法或实机飞控验证。
 
-当前验证范围限定为确定性数值仿真、有限场景闭环响应、最小姿态估计接口和自动化工程验证。项目不代表完整自主飞行器、生产级飞控系统或真实飞行验证。
+## Research Question
 
-## Problem and Motivation
+用同一套闭环仿真链比较 `IDEAL_BENCHMARK` 与 `ESTIMATED_ATTITUDE_LOOP`，再以 Layer A 的受控估计器输入和 Layer B 的全环回放诊断，检查观测来源变化与估计假设相关的证据边界。配对实验测得的真实轨迹差异，不能直接归因于估计器中的某个单独环节。
 
-- 模块化仿真架构用于分离物理模型、控制逻辑、执行器和数值积分器，使各模块能够独立检查和替换，并减少耦合实现对问题定位的干扰。
-- `observation boundary` 用于显式区分 `IDEAL_BENCHMARK` 与 `ESTIMATED` 数据来源，同时记录字段有效性和 consumer contract，避免控制器无意使用不可用状态或隐式 truth fallback。
-- `deterministic validation` 用于固定随机种子、仿真时间、参数身份和输出证据，使有限场景可以复现，并将控制饱和、分配失败、电机限幅和物理限制分别记录。
+## Auditable Simulation Platform
 
-这些设计服务于仿真平台的工程验证，不构成 HIL、实机飞行性能或飞行安全证明。
+平台使用 13D numerical state、ENU / FLU 坐标约定、Hamilton `q_wb`、Newton–Euler 刚体模型与固定步长 RK4。Controller → Mixer → Motor → Dynamics 的链路接入 `SensorContext`、`IdealImu`、`MinimalAttitudeEstimator` 和 typed observation contract；确定性 scheduler、字段有效性检查及 provenance 记录让实验条件和消费的观测来源可核查。
 
-## Architecture / Method
+## Paired Observation Experiment
 
-![QuadControl-Lab modular architecture](assets/quadcontrol_architecture.svg)
+![Frozen paired observation-source architecture](assets/figure_01_paired_architecture.svg)
 
-*项目整体架构图：两条显式 observation path 接入同一控制与动力学链；`ESTIMATED` 仅用于姿态/角速度内环接口验证。*
+*Figure 1 · 冻结配对协议的概念结构图。两臂共享 plant、controller、mixer、actuator、RK4、reference 与初始化；`IDEAL_BENCHMARK` 消费 truth observation，`ESTIMATED_ATTITUDE_LOOP` 消费由 Ideal IMU、最小姿态估计器和 consumer adapter 生成的观测。它不是完整飞行系统图或性能结果。*
 
-```mermaid
-flowchart LR
-    accTitle: QuadControl-Lab Core Pipeline
-    accDescr: IDEAL_BENCHMARK and ESTIMATED observation paths enter a shared boundary before the controller, mixer, motor, rigid-body dynamics, and RK4 integration stages.
+## Closed-Loop Result
 
-    ideal_benchmark["IDEAL_BENCHMARK"] --> observation_boundary["Observation boundary"]
-    estimated["ESTIMATED"] --> observation_boundary
-    observation_boundary --> controller["Controller"]
-    controller --> mixer["Mixer"]
-    mixer --> motor["Motor"]
-    motor --> dynamics["Dynamics"]
-    dynamics --> rk4["RK4"]
-```
+![Formal paired closed-loop response](assets/figure_02_formal_closed_loop_response.svg)
 
-`IDEAL_BENCHMARK` 使用已提交的 truth state 构造完整观测；`ESTIMATED` 采用 `IdealImu → ImuMeasurement → MinimalAttitudeEstimator → ControllerObservation` 路径，仅提供姿态/角速度有效字段。两条路径均通过 observation boundary 后进入 `Controller → Mixer → Motor → Dynamics → RK4` 主链。
+*Figure 2 · 固定 +10° roll `ATTITUDE_STEP`、seed 0、10 s 的冻结配对响应；展示真实状态和控制命令的分离，不比较不同控制算法，也不证明稳定性。*
+
+预先定义的配对指标中，真实姿态轨迹的 RMS 角距离为 **1.096029 rad**，真实角速度的 RMS 配对差为 **0.201693 rad/s**。同侧 observation-to-truth 姿态 RMS：`IDEAL_BENCHMARK` 为 **0 rad**，`ESTIMATED_ATTITUDE_LOOP` 为 **1.184857 rad**。这些值来自同一固定合成场景的冻结产物，不是跟踪性能、估计器普适精度或飞行性能指标。
+
+[Figure 3：观测、命令与真实状态差异的时间线](assets/figure_03_divergence_timeline.svg)仅作描述性上下文，不给出因果时滞或单一机制归因。
+
+## Controlled Mechanism — Layer A
+
+![Layer A controlled estimator-input mechanism](assets/figure_04_layer_a_mechanism.svg)
+
+*Figure 4 · 两个受控估计器输入案例保持 gyro、specific-force 模长、时间戳及初始化相同，只改变 specific-force 方向；并非完整 plant 的反事实实验。*
+
+冻结判定为 **SUPPORTED**。A1/A2 终端姿态误差分别为 **0 rad** 与 **0.3354319429327265 rad**；两臂公式检查各 **200/200 PASS**。该结果支持所限定输入条件下的方向敏感机制，不外推真实传感器或所有飞行状态。
+
+## Full-Loop Mechanism — Layer B
+
+![Layer B estimator roll-error budget](assets/figure_05_layer_b_roll_error_budget.svg)
+
+*Figure 5 · 冻结全环回放中的估计器 roll-error 净累计预算及 B-1/B-2/B-3 检查；图中比例不是车辆轨迹差异的因果份额。*
+
+Layer B 冻结判定为 **SUPPORTED**：parent replay 比较 **10,000 rows / 328,049 recursive fields / 0 mismatches**；B-1 为 **993/993**，B-2 为 **0 prefix violations**，B-3 的预算闭合残差为 **0 rad**。`S_P=+0.0010590188090782893 rad`、`S_C=-2.074123335176487 rad`，对应 `R_C=0.9994896743377543`。
+
+**`R_C` 仅是估计器 roll-error 两项有符号净累计预算的相对量，不是车辆轨迹差异的因果百分比。** 结果不表明“关闭 correction 就会恢复 IDEAL 轨迹”。
+
+## Evidence Chain
+
+闭环配对现象 → 受控输入机制（Layer A）→ 全环回放与机制一致性检查（Layer B）→ 冻结结论边界。数值含义以[公开证据索引](evidence/validation_summary.md)及源项目的 final result freeze 为准；这里不把诊断性时间线升级为新的正式指标。
+
+## Reproducibility / Auditability
+
+固定协议记录初始条件、观测来源和运行身份；Layer B 对 parent 进行逐字段精确回放比较。正式指标、Layer A/B 判定与图 1–5 均有冻结产物 SHA-256 和图像 provenance。作品集只发布精选图与代码选读，不包含原始大体积 JSON、完整依赖或独立复现包。
 
 ## My Contribution
 
-- **仿真架构设计**：建立分层依赖、`SimulationClock`、固定步长 RK4、状态感知调度和多速率更新边界。
-- **动力学、执行器和传感器接口实现**：实现刚体平动/转动方程、四元数状态、坐标系感知的力与力矩聚合、Mixer、转子/电机状态模型和 IMU specific-force 模型。
-- **IMU 与最小姿态估计接口**：实现 `IdealImu`、`ImuMeasurement` 和 `MinimalAttitudeEstimator` 到姿态内环的受限观测路径。
-- **Observation contract 与 provenance 设计**：记录观测来源、聚合有效性、consumer-specific 字段有效性、分配失败和执行器限制来源。
-- **确定性实验与自动化验证**：组织有限场景实验、参数哈希、Git commit、全速率日志和 JSON provenance；原仓库最终验证记录为 1129 tests passed，并通过 `ruff` 与 `mypy` 检查。
-
-上述贡献构成仿真与验证平台，不表示完成了完整飞控系统或真实飞行闭环。
-
-## Representative Results
-
-| Result | Evidence-backed observation | Boundary |
-| ------ | --------------------------- | -------- |
-| 10° roll attitude step | 最终姿态误差约 `0.004746°`，settling-like time 为 `1.383 s` | `IDEAL_BENCHMARK` 下的 deterministic simulation；不代表真实飞行性能或位置保持能力 |
-| 0.05 N·m body torque pulse | 最大姿态误差约 `1.603°`，恢复时间约 `0.69 s` | `IDEAL_BENCHMARK` 下的有限确定性扰动场景；不证明全局鲁棒性或飞行安全 |
-| ESTIMATED observation path | 完成姿态和角速度有效观测、字段有效性及控制器边界验证；位置和速度字段无效 | `ESTIMATED` 接口级 deterministic validation；不是完整 estimated-flight 或真实传感器闭环结果 |
-
-所有数值均来自原仓库已有实验产物，本展示页未重新运行实验。
-
-## Figures / Evidence
-
-1. [Project architecture](assets/quadcontrol_architecture.svg)：项目整体架构图，展示 observation path、控制链和动力学主链。
-2. [Attitude step response](assets/attitude_step_response.svg)：确定性姿态阶跃响应示例；图中曲线用于展示，指标来自原始 full-rate artifact。
-
-![Deterministic attitude-step response](assets/attitude_step_response.svg)
-
-*确定性姿态阶跃响应示例；该结果使用 `IDEAL_BENCHMARK`，不代表真实飞行性能。*
+- 建立四旋翼动力学、控制分配、执行器、数值积分与传感器的模块化仿真链。
+- 设计显式 observation contract 和 `IDEAL_BENCHMARK` / `ESTIMATED_ATTITUDE_LOOP` 配对边界。
+- 实现确定性配对配置、受控 Layer A 输入、Layer B 回放等价检查与估计器误差预算审计。
+- 整理冻结结果、图像来源和不可外推的结论边界。
 
 ## Limitations
 
-- 无实机飞行验证，也不声称真实飞行性能或飞行安全。
-- 无 HIL 验证。
-- 无完整位置/速度估计，不支持基于估计位置或速度的位置保持和高度保持。
-- 无 EKF，也未集成 GPS、磁力计、气压计或完整 sensor fusion。
-- 无真实传感器闭环；当前 IMU 与 `ESTIMATED` 路径属于确定性仿真和接口验证。
-- 当前 `ESTIMATED` 路径仅用于姿态/角速度内环消费，不构成持久化的 full-plant estimated-flight 结果。
-- 有限场景结果不证明全局稳定性、鲁棒性、收敛性或对未测试工况的泛化能力。
+- **Synthetic simulation only**；正式配对实验仅为固定 +10° roll `ATTITUDE_STEP`、seed 0、10 s、无传感器噪声/偏置及外部扰动的条件。
+- Layer A 是估计器输入层面的受控比较；Layer B 是该全环协议下的机制一致性诊断。二者不构成车辆轨迹差异的完整因果分解。
+- 仅采用 `IdealImu` 与 `MinimalAttitudeEstimator`；没有 EKF、完整位置/速度估计或跨算法 estimator benchmark。
+- 无硬件、HIL 或实机飞行验证；没有全局稳定性证明、飞行安全结论或对现实噪声/偏置的泛化保证。
 
 ## Repository / Evidence
 
-- **Selected Implementation**: [QuadControl-Lab selected code](../../selected-code/quadcontrol-lab/). This snapshot is provided for implementation review only and is not a complete reproduction package.
-- **Original Repository**：[QuadControl-Lab source repository](https://github.com/feiranzhao15077/QuadControl-Lab)
-- **Evidence**：[Portfolio evidence index](evidence/validation_summary.md)；[Source Phase 6 status index](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/simulation/phase6_status.md)
-- **Validation Summary**：[Validation summary source](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/project/validation_summary.md)
-- **Architecture Source**：[Final architecture source](https://github.com/feiranzhao15077/QuadControl-Lab/blob/main/docs/project/quadcontrol_architecture.md)
+- **Selected Code**：[QuadControl-Lab selected implementation](../../selected-code/quadcontrol-lab/)；供源码审阅，不是完整复现包。
+- **Public Evidence**：[Frozen-result and figure index](evidence/validation_summary.md)。
+- **Original Repository**：[QuadControl-Lab source](https://github.com/feiranzhao15077/QuadControl-Lab)（访问权限以源仓库设置为准）。
+- **Final Freeze / Captions / Provenance**：[结果冻结](https://github.com/feiranzhao15077/QuadControl-Lab/blob/123ab8a57f355e7c615a9c841fcd94b84b5ddd91/docs/experiments/phase3_7_10_final_result_freeze.md) · [图注](https://github.com/feiranzhao15077/QuadControl-Lab/blob/123ab8a57f355e7c615a9c841fcd94b84b5ddd91/docs/figures/final/figure_captions.md) · [图像来源](https://github.com/feiranzhao15077/QuadControl-Lab/blob/123ab8a57f355e7c615a9c841fcd94b84b5ddd91/docs/figures/final/figure_provenance.md)（源仓库若未公开，这些链接可能需授权）。

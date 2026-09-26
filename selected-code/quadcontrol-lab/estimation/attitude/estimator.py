@@ -8,6 +8,7 @@ controller modules.
 from __future__ import annotations
 
 from math import atan2, hypot, isfinite
+from typing import cast
 
 import numpy as np
 
@@ -27,6 +28,7 @@ from core.state.quaternion import (
     quaternion_norm,
     rotate_world_to_body,
 )
+from estimation.attitude.diagnostic import AttitudeEstimatorDiagnosticSnapshot
 from estimation.model import EstimatorContractError
 
 __all__ = ["MinimalAttitudeEstimator"]
@@ -60,7 +62,12 @@ class MinimalAttitudeEstimator:
         gravity_mps2: float = 9.80665,
         gravity_tolerance_mps2: float = 0.5,
         gravity_correction_gain_s: float = 3.0,
+        diagnostics_enabled: bool = False,
     ) -> None:
+        if type(diagnostics_enabled) is not bool:
+            raise TypeError("diagnostics_enabled must be a bool")
+        self._diagnostics_enabled = diagnostics_enabled
+        self._diagnostic_snapshot: AttitudeEstimatorDiagnosticSnapshot | None = None
         self._gravity_mps2 = self._validate_positive(
             gravity_mps2, "gravity_mps2", allow_zero=False
         )
@@ -79,6 +86,11 @@ class MinimalAttitudeEstimator:
     def status(self) -> ObservationProviderStatus:
         """Return ``UNINITIALIZED`` or ``READY`` for this minimal estimator."""
         return self._status
+
+    @property
+    def diagnostic_snapshot(self) -> AttitudeEstimatorDiagnosticSnapshot | None:
+        """The latest owned successful event snapshot, or None when diagnostics are OFF."""
+        return self._diagnostic_snapshot
 
     def initialize(
         self,
@@ -104,10 +116,31 @@ class MinimalAttitudeEstimator:
         self._quaternion_wb = self._gravity_aligned_quaternion(specific_force)
         self._previous_timestamp_s = timestamp
         self._status = ObservationProviderStatus.READY
-        return self._make_observation(
+        observation = self._make_observation(
             timestamp=timestamp,
             angular_velocity_body_radps=self._corrected_gyro(measurement),
         )
+        if self._diagnostics_enabled:
+            self._diagnostic_snapshot = AttitudeEstimatorDiagnosticSnapshot(
+                timestamp=timestamp,
+                sample_index=None,
+                event_kind="INITIALIZE",
+                specific_force_body_mps2=specific_force,
+                angular_velocity_body_radps=measurement.angular_velocity_body_radps,
+                specific_force_norm=force_norm,
+                correction_gate_pass=None,
+                gate_reason="INITIALIZATION_NORM_ACCEPTED",
+                dt_s=None,
+                corrected_gyro_body_radps=observation.angular_velocity,
+                q_pred_wb=None,
+                predicted_up_body=None,
+                measured_specific_force_direction_body=None,
+                alignment_error_body=None,
+                correction_fraction=None,
+                delta_q_body=None,
+                q_after_correction_wb=observation.attitude,
+            )
+        return observation
 
     def update(
         self,
@@ -140,20 +173,46 @@ class MinimalAttitudeEstimator:
 
         specific_force = self._specific_force(measurement)
         force_norm = float(np.linalg.norm(specific_force))
+        diagnostic_values: dict[str, object] | None = {} if self._diagnostics_enabled else None
         corrected = self._apply_gravity_correction(
             propagated,
             specific_force,
             force_norm,
             dt_s,
+            diagnostic_values=diagnostic_values,
         )
 
         # Commit only after every validation and numerical operation succeeds.
         self._quaternion_wb = corrected
         self._previous_timestamp_s = timestamp
-        return self._make_observation(
+        observation = self._make_observation(
             timestamp=timestamp,
             angular_velocity_body_radps=corrected_gyro,
         )
+        if diagnostic_values is not None:
+            gate_pass = cast(bool, diagnostic_values["gate_pass"])
+            self._diagnostic_snapshot = AttitudeEstimatorDiagnosticSnapshot(
+                timestamp=timestamp,
+                sample_index=None,
+                event_kind="UPDATE",
+                specific_force_body_mps2=specific_force,
+                angular_velocity_body_radps=measurement.angular_velocity_body_radps,
+                specific_force_norm=force_norm,
+                correction_gate_pass=gate_pass,
+                gate_reason="APPLIED" if gate_pass else "SKIPPED_NORM_GATE",
+                dt_s=dt_s,
+                corrected_gyro_body_radps=corrected_gyro,
+                q_pred_wb=propagated,
+                predicted_up_body=cast(np.ndarray | None, diagnostic_values.get("predicted_up")),
+                measured_specific_force_direction_body=cast(
+                    np.ndarray | None, diagnostic_values.get("measured_up")
+                ),
+                alignment_error_body=cast(np.ndarray | None, diagnostic_values.get("residual")),
+                correction_fraction=cast(float | None, diagnostic_values.get("fraction")),
+                delta_q_body=cast(np.ndarray, diagnostic_values["delta_quaternion"]),
+                q_after_correction_wb=corrected,
+            )
+        return observation
 
     def reset(self) -> None:
         """Clear quaternion, bias, timestamp, and lifecycle state."""
@@ -161,6 +220,7 @@ class MinimalAttitudeEstimator:
         self._gyro_bias_body_radps = np.zeros(_VECTOR_SIZE, dtype=float)
         self._previous_timestamp_s = None
         self._status = ObservationProviderStatus.UNINITIALIZED
+        self._diagnostic_snapshot = None
 
     def _validate_measurement(
         self,
@@ -220,11 +280,17 @@ class MinimalAttitudeEstimator:
         specific_force: np.ndarray,
         force_norm: float,
         dt_s: float,
+        diagnostic_values: dict[str, object] | None = None,
     ) -> np.ndarray:
         if abs(force_norm - self._gravity_mps2) > self._gravity_tolerance_mps2:
             # Translational acceleration is not treated as a gravity observation.
+            if diagnostic_values is not None:
+                diagnostic_values["gate_pass"] = False
+                diagnostic_values["delta_quaternion"] = np.array([1.0, 0.0, 0.0, 0.0])
             return quaternion_wb
 
+        if diagnostic_values is not None:
+            diagnostic_values["gate_pass"] = True
         measured_up_body = specific_force / force_norm
         predicted_up_body = rotate_world_to_body(quaternion_wb, _GRAVITY_AXIS_WORLD)
         alignment_error_body = np.cross(measured_up_body, predicted_up_body)
@@ -233,6 +299,12 @@ class MinimalAttitudeEstimator:
         delta_quaternion = self._normalize_quaternion(
             np.concatenate(([1.0], 0.5 * correction_vector))
         )
+        if diagnostic_values is not None:
+            diagnostic_values["measured_up"] = measured_up_body
+            diagnostic_values["predicted_up"] = predicted_up_body
+            diagnostic_values["residual"] = alignment_error_body
+            diagnostic_values["fraction"] = correction_fraction
+            diagnostic_values["delta_quaternion"] = delta_quaternion
         return self._normalize_quaternion(
             quaternion_multiply(quaternion_wb, delta_quaternion)
         )

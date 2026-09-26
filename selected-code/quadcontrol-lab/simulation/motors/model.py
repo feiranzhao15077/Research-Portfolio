@@ -189,9 +189,10 @@ class RotorState:
             raise RotorStateError("rotor speeds contain a non-finite component")
         if np.any(array < 0.0):
             raise RotorStateError("rotor speeds must be non-negative")
-        frozen = np.array(array, dtype=float, copy=True)
-        frozen.setflags(write=False)
-        object.__setattr__(self, "rotor_speed_radps", frozen)
+        # Keep the rotor state behind immutable bytes, not a reopenable ndarray flag.
+        object.__setattr__(
+            self, "rotor_speed_radps", np.frombuffer(array.tobytes(), dtype=float)
+        )
 
     @property
     def rotor_speed_squared_radps2(self) -> np.ndarray:

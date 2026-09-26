@@ -15,6 +15,8 @@ from enum import StrEnum
 from math import isfinite
 from typing import Protocol, TypeVar, runtime_checkable
 
+import numpy as np
+
 from core.state import QuadState
 
 __all__ = [
@@ -328,8 +330,10 @@ class ControllerObservation:
     field is valid. ``field_validity`` records which fields the provider actually
     estimates, allowing an attitude-only provider to mark position and velocity invalid
     without pretending that their carrier values are estimates. The object stores its
-    simulation timestamp only. Observation age, stale thresholds, and stale decisions
-    belong to a scheduler/control boundary and are deliberately absent.
+    simulation timestamp and, when supplied by a scheduler composition boundary,
+    the exact physics sample index. Observation age and stale decisions belong to
+    the consumer boundary. ``VALID`` fields mean that this source supplies the
+    named field for the selected consumer; they do not imply plant truth.
     """
 
     state: QuadState
@@ -337,6 +341,7 @@ class ControllerObservation:
     validity: bool
     source: ObservationSource
     field_validity: ObservationValidity | None = None
+    sample_index: int | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.state, QuadState):
@@ -352,6 +357,10 @@ class ControllerObservation:
             )
         if not isinstance(self.source, ObservationSource):
             raise TypeError("source must be an explicit ObservationSource")
+        if self.sample_index is not None and (
+            type(self.sample_index) is not int or self.sample_index < 0
+        ):
+            raise ValueError("sample_index must be a non-negative integer when supplied")
         if self.field_validity is None:
             field_validity = (
                 ObservationValidity.all_valid()
@@ -369,3 +378,13 @@ class ControllerObservation:
             )
         object.__setattr__(self, "timestamp", timestamp)
         object.__setattr__(self, "field_validity", field_validity)
+
+    @property
+    def attitude(self) -> np.ndarray:
+        """Attitude field in the unified numerical observation carrier."""
+        return self.state.attitude_wb
+
+    @property
+    def angular_velocity(self) -> np.ndarray:
+        """Body angular velocity field in the unified numerical carrier."""
+        return self.state.angular_velocity_body_radps

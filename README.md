@@ -25,7 +25,7 @@
 | [EM-Trace](projects/em-trace/) | 工程工具 | 工程链与计算电磁工具 | 参数化建模、CST 仿真与信号链分析 |
 | [LowAlt-MD](projects/lowalt-md/) | 研究项目 | 低空旋翼微多普勒物理机制研究 | 物理建模、特征分析与机理解释 |
 | [EMvision](projects/emvision/) | 研究项目 | 受控电磁衰减与域因素失配条件下的微多普勒识别实验设计与归因审计 | 合成实验、域因素分析与协议内归因审计 |
-| [QuadControl-Lab](projects/QuadControl-Lab/) | 仿真平台 | 四旋翼动力学、控制与姿态估计仿真 | 动力学建模、控制仿真与最小姿态估计接口验证 |
+| [QuadControl-Lab](projects/QuadControl-Lab/) | 仿真研究 | 可审计闭环仿真中的 IDEAL / ESTIMATED 配对观测与 Layer A/B 机制检查 | 四旋翼动力学、控制链、观测边界与确定性证据审计 |
 
 ## Research Map
 
@@ -50,12 +50,12 @@ flowchart LR
 
 | Skill | Evidence |
 | ----- | -------- |
-| Python | EMvision 的实验与分析流程；QuadControl-Lab 的仿真与验证 |
+| Python | EMvision 的实验与分析流程；QuadControl-Lab 的仿真、配对实验与审计 |
 | CST | EM-Trace 的参数化全波仿真与结果提取 |
 | Electromagnetic Modeling | EM-Trace、LowAlt-MD 与 EMvision 的电磁建模和信号分析 |
 | Micro-Doppler Analysis | LowAlt-MD 的机理分析；EMvision 的受控合成实验与协议内归因审计 |
-| Control Simulation | QuadControl-Lab 的动力学与闭环控制仿真 |
-| Attitude Estimation / Observation Interface | QuadControl-Lab 的最小姿态估计与控制器观测接口验证 |
+| Control Simulation | QuadControl-Lab 的动力学与闭环控制仿真、受控观测来源比较 |
+| Attitude Estimation / Observation Interface | QuadControl-Lab 的最小姿态估计、控制器观测边界与机制检查 |
 
 ## Evidence Policy
 

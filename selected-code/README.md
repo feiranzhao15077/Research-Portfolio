@@ -9,7 +9,7 @@
 | [EM-Trace](em-trace/) | CAD–CST–complex field extraction–signal processing workflow |
 | [LowAlt-MD](lowalt-md/) | Synthetic rotor micro-Doppler physics modeling |
 | [EMvision](emvision/) | Controlled factorial experiment and attribution workflow |
-| [QuadControl-Lab](quadcontrol-lab/) | Simulation-oriented dynamics and observation-interface design |
+| [QuadControl-Lab](quadcontrol-lab/) | Auditable quadrotor simulation, paired observation sources and Layer A/B mechanism audit |
 
 每个快照的 README 记录来源 commit、展示范围和依赖限制。请先阅读对应说明；部分原仓库模块、输入与运行环境未包含在快照中。
 
