@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>本科科研项目概览 | Undergraduate Research Project Overview</title>
+  <link rel="stylesheet" href="Undergraduate_Research_Project_Overview.css">
+</head>
+<body>
+  <section class="page">
+    <div class="page-one-head">
+      <div>
+        <p class="kicker">Research Profile</p>
+        <h1>本科科研项目概览</h1>
+        <p class="subtitle">Undergraduate Research Project Overview</p>
+        <div class="rule"></div>
+      </div>
+      <div class="school-motto">格物穷理致数博学</div>
+      <div class="hero-image-wrap">
+        <img src="Undergraduate_Research_Project_Overview_hero.png" alt="Quadrotor research target model">
+      </div>
+    </div>
+
+    <div class="identity-hero">
+      <div>
+        <p class="section-label">Research Identity</p>
+        <div class="identity">
+          本科阶段围绕计算电磁、旋翼微多普勒与无人系统仿真开展研究，形成从物理建模、数值实现到受控实验和证据审计的方法链。重视坐标与相位约定、变量控制、负结果和结论边界，并关注模型与工程实现的可复现性。
+        </div>
+      </div>
+      <div class="hero-caption">Quadrotor target model<br><span>for simulation and electromagnetic analysis</span></div>
+    </div>
+
+    <div class="map-wrap">
+      <p class="section-label">Research Theme Evolution</p>
+      <div class="map">
+        <div class="map-node"><strong>EM-Trace</strong><span>Computational Electromagnetics</span></div>
+        <div class="map-link" aria-hidden="true"></div>
+        <div class="map-node"><strong>LowAlt-MD</strong><span>Rotor Micro-Doppler Modeling</span></div>
+        <div class="map-link" aria-hidden="true"></div>
+        <div class="map-node"><strong>EMvision</strong><span>Controlled Experiment &amp; Domain Mismatch</span></div>
+      </div>
+      <div class="map-note">箭头表示研究主题与方法关注点的演进，不表示项目间的数据、代码或严格技术依赖。</div>
+      <div class="branch">
+        <div class="branch-arrow">独立分支</div>
+        <div class="branch-node"><strong>QuadControl-Lab</strong><span>Autonomous Systems Simulation</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top: 6mm">
+      <p class="section-label">Four Projects at a Glance</p>
+      <div class="projects-overview">
+        <div class="overview-card"><strong>EM-Trace</strong><p>可审计的计算电磁工程链<br><span class="project-type">Computational Electromagnetics</span></p></div>
+        <div class="overview-card"><strong>LowAlt-MD</strong><p>合成模型下的旋翼微多普勒机制研究<br><span class="project-type">Physics Modeling</span></p></div>
+        <div class="overview-card"><strong>EMvision</strong><p>受控合成实验与域失配统计归因<br><span class="project-type">Experimental Design</span></p></div>
+        <div class="overview-card"><strong>QuadControl-Lab</strong><p>可审计四旋翼闭环仿真与观测机制研究<br><span class="project-type">Auditable Quadrotor Simulation</span></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="page-header">
+      <h2>Representative Research Projects</h2>
+      <span class="page-number">02 / 02</span>
+    </div>
+
+    <article class="project-card hero">
+      <div>
+        <h3>EMvision</h3>
+        <p class="project-type">Controlled Synthetic Domain-Mismatch Experiment</p>
+        <p class="project-text">在 fixed synthetic test domain 上，以 C/G/P <code>2×2×2</code> full-factorial design、20 paired seeds、paired bootstrap、interaction analysis 和 negative controls 审查训练域失配。固定分类器作为 measurement instrument，用于比较 v000 完全失配与 v111 完全匹配条件。</p>
+        <div class="evidence">
+          <p class="evidence-label">Representative experimental evidence</p>
+          <p class="metric">0.1864 → 0.9897</p>
+          <p class="metric-sub">Macro-F1&nbsp;&nbsp; · &nbsp;&nbsp;Δ = 0.8033&nbsp;&nbsp; · &nbsp;&nbsp;95% CI [0.7729, 0.8299]</p>
+        </div>
+        <p class="takeaway">通过固定测试域、严格配对和负对照，将域失配问题转化为可审计的受控实验。</p>
+        <p class="boundary">Shapley 仅作 frozen protocol 下的 path-order summary，不是 physical causality；结果来自 synthetic experiment。</p>
+      </div>
+      <div>
+        <div class="figure-box"><img src="../projects/emvision/assets/protocol_map.png" alt="EMvision C/G/P protocol map"></div>
+        <p class="figure-caption">C/G/P protocol map：固定测试域、全因子角点与审计流程</p>
+      </div>
+    </article>
+
+    <div class="two-col">
+      <article class="project-card compact">
+        <h3>LowAlt-MD</h3>
+        <p class="project-type">Synthetic Rotor Micro-Doppler Mechanism Study</p>
+        <p class="project-text">Physics Model v2、M0–M3、Fresnel Reflection、Path Phase 与 Coherent Interference 构成分层机制模型。</p>
+        <div class="evidence">
+          <p class="evidence-label">Normalized-spectrum difference</p>
+          <p class="metric mechanism-metric">M1 ≈ 4.24×10<sup>-17</sup> · M2 ≈ 0.0252</p>
+        </div>
+        <p class="takeaway">在当前无噪声归一化条件下，M1 公共复增益 → 谱形不变；M2 散射单元相关复权重 → 谱形改变。</p>
+        <p class="boundary">结论限定于当前合成模型。</p>
+        <div class="figure-box"><img src="../projects/lowalt-md/assets/m1_m2_normalized_spectrum_200m.png" alt="LowAlt-MD M1 and M2 normalized spectrum comparison"></div>
+        <p class="figure-caption">M1/M2 normalized-spectrum comparison</p>
+      </article>
+
+      <article class="project-card compact">
+        <h3>EM-Trace</h3>
+        <p class="project-type">Auditable Computational Electromagnetics Toolchain</p>
+        <p class="method-line">Parameterized CAD → CST → Complex Field → Python Signal Processing</p>
+        <p class="project-text">以 Coordinate 约定审计、Polarization 检查及 Mesh / Calculation-Domain Audit 控制结果解释边界。</p>
+        <div class="evidence">
+          <p class="evidence-label">Representative finding</p>
+          <p class="takeaway">坐标约定审计识别并纠正无效解释：φ = 0° 为 forward；单站后向为 θ = 90°, φ = 180°。此前错误解释已撤回。</p>
+        </div>
+        <p class="boundary">不声称高精度 RCS 收敛或正确后向 Micro-Doppler 定量验证。</p>
+        <div class="figure-box"><img src="../projects/em-trace/assets/micro_motion_signal_chain.png" alt="EM-Trace signal processing chain"></div>
+        <p class="figure-caption">Pipeline verification only<br>该流程用于展示工程处理链实现和一致性检查，不代表定量雷达验证。</p>
+      </article>
+    </div>
+
+    <article class="quadcontrol-card">
+      <div class="quadcontrol-copy">
+        <h3>QuadControl-Lab</h3>
+        <p class="project-type">Auditable Quadrotor Closed-Loop Simulation</p>
+        <p class="quad-position">面向观测来源与估计假设影响分析的可审计四旋翼闭环仿真平台。</p>
+        <p class="quad-question">同一 plant / controller / mixer / actuator 和实验条件下，仅改变 controller 消费的 observation source，闭环姿态行为如何变化？</p>
+        <p class="quad-method">IDEAL vs ESTIMATED paired observation → Layer A controlled estimator input → Layer B full-loop replay audit</p>
+        <div class="quad-results">
+          <p><strong>1.096029 rad</strong><span>True-attitude RMS paired angular distance</span></p>
+          <p><strong>0 → 0.3354 rad</strong><span>Layer A · A1/A2 terminal attitude error · SUPPORTED</span></p>
+          <p><strong>10,000 rows · 0 mismatches</strong><span>Layer B parent replay · B-1 993/993 · SUPPORTED</span></p>
+        </div>
+        <p class="quad-boundary">Synthetic deterministic study only · No hardware / HIL / real flight</p>
+      </div>
+      <div class="quad-figure">
+        <img src="../projects/QuadControl-Lab/assets/figure_01_paired_architecture.svg" alt="Frozen paired observation-source architecture">
+        <p>Frozen paired architecture · schematic, not measured performance</p>
+      </div>
+    </article>
+
+    <div class="capabilities">
+      <div class="capability"><strong>Physics Modeling</strong><span>Rotor kinematics<br>Coherent interference</span></div>
+      <div class="capability"><strong>Computational EM</strong><span>CAD–CST<br>Complex field · Audit</span></div>
+      <div class="capability"><strong>Experimental Design</strong><span>Full factorial<br>Paired evaluation</span></div>
+      <div class="capability"><strong>System Simulation</strong><span>Rigid-body dynamics<br>Observation boundary</span></div>
+    </div>
+
+    <p class="figure-caption"><strong>Research Approach:</strong> Physics-informed modeling, controlled computational experiments, and evidence-oriented validation.</p>
+    <p class="global-boundary">主要证据来自合成仿真与受控实验；不包含真实雷达验证、实机飞行或 HIL 验证。</p>
+  </section>
+</body>
+</html>
